@@ -4,14 +4,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  // small helper to escape HTML when inserting user data
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
       const response = await fetch("/activities");
       const activities = await response.json();
 
-      // Clear loading message
+      // Clear loading message and dropdown
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -20,11 +31,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
+        const participantsHtml =
+          details.participants && details.participants.length > 0
+            ? `<ul class="participants-list">${details.participants
+                .map((p) => `<li>${escapeHtml(p)}</li>`)
+                .join("")}</ul>`
+            : `<p class="no-participants">No participants yet</p>`;
+
         activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
+          <h4>${escapeHtml(name)}</h4>
+          <p>${escapeHtml(details.description)}</p>
+          <p><strong>Schedule:</strong> ${escapeHtml(details.schedule)}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+
+          <div class="participants">
+            <h5>Participants</h5>
+            ${participantsHtml}
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
